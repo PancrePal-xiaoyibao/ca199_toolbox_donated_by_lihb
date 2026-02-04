@@ -5,6 +5,7 @@
 ---
 
 ## 证明书编号 / Certificate No.
+
 **CA199-TOOLBOX-DONATION-2024**
 
 ---
@@ -15,21 +16,21 @@
 
 本证明书证明：
 
-**捐赠人**: lihb  
-**受赠方**: 开源医疗信息化社区  
-**捐赠项目**: CA199 医疗指标可视化工具（ca199_toolbox）  
-**捐赠时间**: 2024年  
+**捐赠人**: lihb
+**受赠方**: 开源医疗信息化社区
+**捐赠项目**: CA199 医疗指标可视化工具（ca199_toolbox）
+**捐赠时间**: 2025年12月
 **捐赠形式**: 全部源代码、文档及相关资产无偿捐赠
 
 ### 捐赠资产清单
 
-| 资产类别 | 内容描述 | 许可方式 |
-|---------|--------|--------|
-| 源代码 | HTML/JavaScript/CSS 实现的医疗指标可视化应用 | AGPL-3.0+ |
-| 文档 | 使用说明、API 文档、开发指南 | AGPL-3.0+ |
-| 数据 | 示例医疗指标数据、用药方案数据 | AGPL-3.0+ |
-| 依赖库 | ECharts、PapaParse 等 | 按原许可证 |
-| 知识产权 | 全部著作权和相关权利 | 转移至社区 |
+| 资产类别 | 内容描述                                     | 许可方式   |
+| -------- | -------------------------------------------- | ---------- |
+| 源代码   | HTML/JavaScript/CSS 实现的医疗指标可视化应用 | AGPL-3.0+  |
+| 文档     | 使用说明、API 文档、开发指南                 | AGPL-3.0+  |
+| 数据     | 示例医疗指标数据、用药方案数据               | AGPL-3.0+  |
+| 依赖库   | ECharts、PapaParse 等                        | 按原许可证 |
+| 知识产权 | 全部著作权和相关权利                         | 转移至社区 |
 
 ### 捐赠目的
 
@@ -78,21 +79,21 @@
 
 This certificate certifies that:
 
-**Donor**: lihb  
-**Recipient**: Open Source Medical Information Community  
-**Donation Project**: CA199 Medical Indicator Visualization Tool (ca199_toolbox)  
-**Donation Date**: 2024  
+**Donor**: lihb
+**Recipient**: Open Source Medical Information Community
+**Donation Project**: CA199 Medical Indicator Visualization Tool (ca199_toolbox)
+**Donation Date**: Dec.2025
 **Donation Form**: Complete source code, documentation and related assets donated free of charge
 
 ### Donation Asset Inventory
 
-| Asset Category | Description | License |
-|---|---|---|
-| Source Code | Medical indicator visualization application in HTML/JavaScript/CSS | AGPL-3.0+ |
-| Documentation | Usage instructions, API documentation, development guides | AGPL-3.0+ |
-| Data | Sample medical indicator data, medication plan data | AGPL-3.0+ |
-| Dependencies | ECharts, PapaParse, etc. | Original License |
-| Intellectual Property | All copyrights and related rights | Transferred to Community |
+| Asset Category        | Description                                                        | License                  |
+| --------------------- | ------------------------------------------------------------------ | ------------------------ |
+| Source Code           | Medical indicator visualization application in HTML/JavaScript/CSS | AGPL-3.0+                |
+| Documentation         | Usage instructions, API documentation, development guides          | AGPL-3.0+                |
+| Data                  | Sample medical indicator data, medication plan data                | AGPL-3.0+                |
+| Dependencies          | ECharts, PapaParse, etc.                                           | Original License         |
+| Intellectual Property | All copyrights and related rights                                  | Transferred to Community |
 
 ### Purpose of Donation
 
@@ -139,22 +140,22 @@ This certificate is an official record of the software donation and has the foll
 
 ### 项目维护者确认
 
-**项目名称**: ca199_toolbox  
-**项目主页**: [在此填写项目地址]  
+**项目名称**: ca199_toolbox
+**项目主页**: [在此填写项目地址]
 **维护者**: [在此填写维护者名称]
 
 **维护者确认**: 本维护者已审阅本捐赠证明，确认捐赠的合法性和有效性。
 
-**维护者签署**: _________________  
+**维护者签署**: _________________
 **签署日期**: _________________
 
 ---
 
 ## 历史记录
 
-| 版本 | 日期 | 事项 | 备注 |
-|-----|------|------|------|
-| 1.0 | 2024年 | 初始捐赠证明 | lihb 捐赠 |
+| 版本 | 日期   | 事项         | 备注      |
+| ---- | ------ | ------------ | --------- |
+| 1.0  | 2024年 | 初始捐赠证明 | lihb 捐赠 |
 
 ---
 
@@ -171,6 +172,7 @@ This certificate is an official record of the software donation and has the foll
 - ❌ 禁止通过本项目获取商业利益
 
 **允许的使用场景:**
+
 - ✅ 个人学习和研究
 - ✅ 医院内部管理系统
 - ✅ 学术机构科研使用
@@ -180,8 +182,8 @@ This certificate is an official record of the software donation and has the foll
 
 ---
 
-**Issued by / 颁发**: ca199_toolbox Community  
-**Document Type / 文档类型**: Official Donation Certificate / 正式捐赠证明  
+**Issued by / 颁发**: ca199_toolbox Community
+**Document Type / 文档类型**: Official Donation Certificate / 正式捐赠证明
 **Validity / 有效期**: Permanent / 永久有效
 
 ---
