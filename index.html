@@ -12,21 +12,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>医疗指标趋势可视化</title>
+  <title>医疗指标趋势管理一页通</title>
   <script src="js/papaparse.min.js"></script>
   <script src="js/echarts.min.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: #f9fafb;
-      padding: 1rem;
+      padding: 1.5rem;
       margin: 0;
     }
     h1 {
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-size: 1.75rem;
+      font-weight: 700;
       color: #7c3aed;
-      margin-bottom: 0.5rem;
+      margin: 0;
+      letter-spacing: -0.025em;
+    }
+    .header-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .logo {
+      width: 3.5rem;
+      height: auto;
+      filter: drop-shadow(0 4px 6px rgba(124, 58, 237, 0.1));
+    }
+    .subtitle {
+      font-size: 0.9375rem;
+      color: #4b5563;
+      margin-bottom: 2rem;
+      line-height: 1.8;
+    }
+    .subtitle p {
+      margin: 0.25rem 0;
     }
     .hidden { display: none; }
     .btn-file {
@@ -132,7 +153,14 @@
   </style>
 </head>
 <body>
-  <h1>医疗指标趋势可视化</h1>
+  <div class="header-container">
+    <img src="https://picgo-1302991947.cos.ap-guangzhou.myqcloud.com/images/Pop%20Mart%20Character%20Front%20View%20(2).png" alt="Logo" class="logo">
+    <h1>医疗指标趋势管理一页通</h1>
+  </div>
+  <div class="subtitle">
+    <p>➡️ 本项目感谢杰出志愿者@lihb的代码贡献和无私开源，携手小x宝社区，用❤️发电，助力肿瘤患者主动科学病情管理。请关注微信公众号“小胰宝助手”。</p>
+    <p>➡️ 小胰宝社区，是重庆天工开物基金会旗下，专注支持胰腺肿瘤患者/家庭病情主动管理的AI技术开源公益社区。</p>
+  </div>
   <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
     <div>
       <label class="btn-file" title="请选择同目录下的 data.csv">
