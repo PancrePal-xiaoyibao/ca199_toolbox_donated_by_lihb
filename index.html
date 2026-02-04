@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>医疗指标趋势可视化</title>
+  <script src="js/papaparse.min.js"></script>
+  <script src="js/echarts.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f9fafb;
+      padding: 1rem;
+      margin: 0;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #7c3aed;
+      margin-bottom: 0.5rem;
+    }
+    .hidden { display: none; }
+    .btn-file {
+      padding: 0.375rem 0.75rem;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      margin-right: 0.5rem;
+    }
+    .btn-file:hover { background: #4338ca; }
+    .file-info {
+      font-size: 0.875rem;
+      color: #4b5563;
+      margin-top: 1.25rem;
+    }
+    .render-btn {
+      margin-top: 0.75rem;
+      width: 100%;
+      background-color: #2563eb;
+      color: white;
+      padding: 0.375rem 0;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      border: none;
+      cursor: pointer;
+    }
+    .render-btn:hover { background-color: #1d4ed8; }
+    .content-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    @media (min-width: 1024px) {
+      .content-container { flex-direction: row; }
+    }
+    .chart-container, .timeline-container {
+      height: 550px;
+      width: 100%;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+    }
+    .timeline-container { height: 120px; margin-top: 1rem; }
+.selector-panel, .control-panel {
+  width: 14rem;
+  background: white;
+  padding: 0.5rem; /* 减少 padding */
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  max-height: 650px; /* 增加最大高度限制，防止撑爆 */
+  overflow-y: auto; /* 内容多时自动滚动 */
+}
+    @media (min-width: 1024px) {
+      .selector-panel, .control-panel { width: 12rem; flex-shrink: 0; }
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .checkbox-item:hover { background-color: #f9fafb; }
+    .checkbox-item input { margin-right: 0.5rem; }
+    .legend-container {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .legend-item { display: flex; align-items: center; font-size: 0.75rem; }
+    .legend-color { width: 12px; height: 12px; border-radius: 2px; margin-right: 0.3rem; }
+
+    /* 控制面板样式 */
+    .control-panel label {
+      font-size: 0.875rem;
+    }
+    .control-panel input[type="checkbox"] {
+      transform: scale(1.2);
+    }
+    .control-panel input[type="number"],
+    .control-panel input[type="range"] {
+      margin-top: 0.25rem;
+    }
+
+    /* 变化率提示文字：放大、加粗 */
+    .rich-text {
+      font-size: 12px !important;
+      font-weight: bold;
+      color: #FF6B6B;
+    }
+  </style>
+</head>
+<body>
+  <h1>医疗指标趋势可视化</h1>
+  <!-- 文件上传区 -->
+  <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+    <div>
+      <label class="btn-file" title="请选择同目录下的 data.csv">
+        加载指标数据 (data.csv)
+        <input type="file" id="dataFile" accept=".csv" style="display:none" />
+      </label>
+      <div id="dataFileName" class="file-info"></div>
+    </div>
+
+    <div>
+      <label class="btn-file" title="请选择同目录下的 medication.csv">
+        加载用药数据 (medication.csv)
+        <input type="file" id="medFile" accept=".csv" style="display:none" />
+      </label>
+      <div id="medFileName" class="file-info"></div>
+    </div>
+  </div>
+
+  <div id="content" class="hidden">
+    <div class="content-container">
+      <div style="flex:1; min-width:0;">
+        <div id="chartContainer" class="chart-container"></div>
+        <div id="timelineContainer" class="timeline-container"></div>
+        <div id="legendContainer" class="legend-container"></div>
+      </div>
+      <!-- 指标选择面板 -->
+      <div class="selector-panel">
+        <div class="control-title" style="font-weight:600;margin-bottom:0.5rem;">显示控制</div>
+
+        <!-- 关键点 + 变化率 合并为一行 -->
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+          <label style="margin-right: 0.5rem;">关键点</label>
+          <input type="checkbox" id="showKeyPoints" checked />
+
+          <label style="margin-right: 0.5rem;">变化率</label>
+          <input type="checkbox" id="showChangeRate" />
+        </div>
+
+        <!-- 数值变化输入框（仅在变化率开启时显示） -->
+        <div id="changeThresholdContainer" style="display: none; margin-top: 0.5rem;">
+          <label style="display: block; font-size: 0.75rem; color: #4b5563; margin-bottom: 0.25rem;">数值变化 ≥</label>
+          <input type="number" id="changeThreshold" value="0" min="0" step="0.1" style="width: 95%; padding: 0.375rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;" />
+        </div>
+
+        <!-- 变化幅度滑块（仅在变化率开启时显示） -->
+        <div id="percentThresholdContainer" style="display: none; margin-top: 0.5rem;">
+          <label style="display: block; font-size: 0.75rem; color: #4b5563; margin-bottom: 0.25rem;">变化幅度 ≥ <span id="percentValue">20%</span></label>
+          <input type="range" id="percentThreshold" min="0" max="100" value="20" style="width: 100%;" />
+        </div>
+
+        <div class="selector-title" style="font-weight:600;margin-bottom:0.5rem;">选择指标</div>
+        <div id="checkboxContainer"></div>
+        <button onclick="renderCharts()" class="render-btn">生成图表</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+let allIndicators = [];
+let medications = [];
+let uniqueNames = [];
+
+const DEFAULT_CONFIG = {
+  dataTable: {
+    timeField: 'testTime',
+    nameField: 'indicatorName',
+    valueField: 'indicatorValue'
+  },
+  medicationTable: {
+    startTimeField: 'START_DATE',
+    endTimeField: 'END_DATE',
+    regimenField: 'DRUG_NAME'
+  }
+};
+
+function isNumeric(val) {
+  if (val === null || val === undefined || val === '') return false;
+  const str = String(val).trim().toLowerCase();
+  const invalid = ['true','false','yes','no','阳性','阴性','normal','abnormal','n/a','na','-','--','none','null','undefined'];
+  if (invalid.includes(str)) return false;
+  return !isNaN(val) && !isNaN(parseFloat(val));
+}
+
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+document.getElementById('dataFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('dataFileName').textContent = `已加载: ${file.name}`;
+  const text = await readFile(file);
+  const data = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+  processMainData(data);
+  tryRenderContent();
+  document.getElementById('dataFileName').textContent = `已加载: ${file.name}，共 ${data.length} 条数据`;
+  e.target.value = '';
+});
+
+document.getElementById('medFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('medFileName').textContent = `已加载: ${file.name}`;
+  const text = await readFile(file);
+  const meds = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+  processMedications(meds);
+  tryRenderContent();
+  document.getElementById('medFileName').textContent = `已加载: ${file.name}，共 ${meds.length} 条数据`;
+  e.target.value = '';
+});
+
+function processMainData(rows) {
+  allIndicators = [];
+  const { timeField, nameField, valueField } = DEFAULT_CONFIG.dataTable;
+
+  for (const row of rows) {
+    const rawTime = row[timeField]?.trim();
+    const name = row[nameField]?.trim();
+    const val = row[valueField];
+
+    if (!rawTime || !name) continue;
+
+    const dt = new Date(rawTime);
+    if (isNaN(dt)) continue;
+    const testTime = dt.toISOString().split('T')[0];
+
+    if (isNumeric(val)) {
+      allIndicators.push({
+        indicatorName: name,
+        indicatorValue: parseFloat(val),
+        indicatorValueRaw: val,
+        testTime: testTime
+      });
+    }
+  }
+
+  uniqueNames = [...new Set(allIndicators.map(i => i.indicatorName))].sort();
+}
+
+function processMedications(rows) {
+  medications = [];
+  const { startTimeField, endTimeField, regimenField } = DEFAULT_CONFIG.medicationTable;
+
+  for (const row of rows) {
+    const start = row[startTimeField]?.trim();
+    const end = row[endTimeField]?.trim();
+    const regimen = row[regimenField]?.trim();
+    if (!start || !end || !regimen) continue;
+
+    const startDt = new Date(start);
+    const endDt = new Date(end);
+    if (isNaN(startDt) || isNaN(endDt) || startDt > endDt) continue;
+
+    medications.push({
+      startTime: startDt.toISOString().split('T')[0],
+      endTime: endDt.toISOString().split('T')[0],
+      regimen: regimen,
+      startTimeStamp: startDt.getTime(),
+      endTimeStamp: endDt.getTime()
+    });
+  }
+}
+
+function tryRenderContent() {
+  if (allIndicators.length > 0) {
+    renderSelector();
+    document.getElementById('content').classList.remove('hidden');
+  }
+}
+
+function renderSelector() {
+  const container = document.getElementById('checkboxContainer');
+  container.innerHTML = '';
+  uniqueNames.forEach(name => {
+    const label = document.createElement('label');
+    label.className = 'checkbox-item';
+    label.innerHTML = `<input type="checkbox" value="${name}"> ${name}`;
+    container.appendChild(label);
+  });
+
+  const firstCheckbox = container.querySelector('input[type="checkbox"]');
+  if (firstCheckbox) {
+    firstCheckbox.checked = true;
+  }
+}
+
+function tryRenderContent() {
+  if (allIndicators.length > 0) {
+    renderSelector();
+    document.getElementById('content').classList.remove('hidden');
+
+    setTimeout(() => {
+      renderCharts();
+    }, 10);
+  }
+}
+
+// 获取指定时间点的用药信息
+function getMedicationsAtTime(timeStamp) {
+  if (medications.length === 0) return ['无用药记录'];
+
+  const matchedMeds = medications.filter(med => {
+    return timeStamp >= med.startTimeStamp && timeStamp <= med.endTimeStamp;
+  });
+
+  if (matchedMeds.length === 0) {
+    return ['无用药记录'];
+  }
+
+  return matchedMeds.map(med => `${med.regimen} (${med.startTime} 至 ${med.endTime})`);
+}
+
+// ========== 图表渲染 ==========
+function renderCharts() {
+  const selected = Array.from(document.querySelectorAll('#checkboxContainer input:checked'))
+    .map(cb => cb.value);
+  if (selected.length === 0) {
+    alert('请至少选择一个指标');
+    return;
+  }
+
+  const chart = echarts.init(document.getElementById('chartContainer'));
+  const timeline = echarts.init(document.getElementById('timelineContainer'));
+
+  const indicatorData = allIndicators.filter(i => selected.includes(i.indicatorName));
+
+  const allTimePoints = [
+    ...indicatorData.map(d => new Date(d.testTime).getTime()),
+    ...medications.flatMap(m => [
+      new Date(m.startTime).getTime(),
+      new Date(m.endTime).getTime()
+    ])
+  ];
+
+  let globalMin, globalMax;
+  if (allTimePoints.length > 0) {
+    globalMin = Math.min(...allTimePoints);
+    globalMax = Math.max(...allTimePoints);
+    const range = globalMax - globalMin;
+    const padding = range * 0.05 || 24 * 60 * 60 * 1000;
+    globalMin -= padding;
+    globalMax += padding;
+  } else {
+    const now = Date.now();
+    globalMin = now - 30 * 24 * 3600 * 1000;
+    globalMax = now;
+  }
+
+  const seriesMap = new Map();
+  selected.forEach(name => seriesMap.set(name, []));
+  indicatorData.forEach(d => {
+    if (seriesMap.has(d.indicatorName)) {
+      seriesMap.get(d.indicatorName).push([
+        new Date(d.testTime).getTime(),
+        d.indicatorValue,
+        d.indicatorValueRaw
+      ]);
+    }
+  });
+
+  const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f'];
+
+  const showKeyPoints = document.getElementById('showKeyPoints').checked;
+  const showChangeRate = document.getElementById('showChangeRate').checked;
+  const changeThreshold = parseFloat(document.getElementById('changeThreshold').value) || 0;
+  const percentThreshold = parseFloat(document.getElementById('percentThreshold').value) || 0;
+  document.getElementById('percentValue').textContent = `${Math.round(percentThreshold)}%`;
+
+  const series = selected.map((name, idx) => {
+    const data = seriesMap.get(name).sort((a, b) => a[0] - b[0]);
+    const color = colors[idx % colors.length];
+    const markPointData = [];
+
+    // ===== 关键点逻辑（含末尾点带名称）=====
+    if (showKeyPoints && data.length > 0) {
+      const values = data.map(d => d[1]);
+      const minVal = Math.min(...values);
+      const maxVal = Math.max(...values);
+      const lastPoint = data[data.length - 1];
+
+      data.forEach(p => {
+        const [time, val, rawVal] = p;
+        const isLast = (time === lastPoint[0]);
+
+        if (val === minVal || val === maxVal) {
+          markPointData.push({
+            coord: [time, val],
+            label: {
+              show: true,
+              formatter: rawVal,
+              color: '#000',
+              fontSize: 12,
+              offset: [0, -10],
+              fontWeight: 'bold'
+            },
+            itemStyle: { color: color },
+            symbolSize: 5,
+            tooltip: { show: true }
+          });
+        }
+
+        if (isLast) {
+          markPointData.push({
+            coord: [time, val],
+            label: {
+              show: true,
+              formatter: `${name}\n${rawVal}`,
+              color: '#000',
+              fontSize: 12,
+              fontWeight: 'bold',
+              backgroundColor: 'rgba(255,255,255,0.8)',
+              borderColor: '#ccc',
+              borderRadius: 4,
+              offset: [0, -20],
+              padding: [4, 6]
+            },
+            itemStyle: { color: color },
+            symbolSize: 5,
+            tooltip: { show: true }
+          });
+        }
+      });
+    }
+
+    // ===== 变化率逻辑（限制小数位数为1位）=====
+    if (showChangeRate && data.length >= 2) {
+      for (let i = 1; i < data.length; i++) {
+        const prev = data[i - 1];
+        const curr = data[i];
+        const diff = curr[1] - prev[1];
+        const absDiff = Math.abs(diff);
+        const percent = prev[1] !== 0 ? (diff / prev[1]) * 100 : 0;
+
+        if (absDiff >= changeThreshold && Math.abs(percent) >= percentThreshold) {
+          const sign = diff > 0 ? '+' : '-';
+          // 核心修复：将差值保留1位小数
+          const fmtDiff = diff.toFixed(1);
+          const fmtPercent = Math.abs(percent).toFixed(1);
+          const label = `${sign}${fmtDiff} (${sign}${fmtPercent}%)`;
+          markPointData.push({
+            coord: [curr[0], curr[1]],
+            label: {
+              show: true,
+              formatter: `{a|${label}}`,
+              offset: diff > 0 ? [0, -20] : [0, 20],
+              rich: { a: { fontSize: 12, color: diff > 0 ? '#FF6B6B' : '#4ECDC4', fontWeight: 'bold' } }
+            },
+            itemStyle: { color: color },
+            symbolSize: 4,
+            tooltip: { show: true }
+          });
+        }
+      }
+    }
+
+    const drawData = data.map(item => [item[0], item[1]]);
+
+    return {
+      name,
+      type: 'line',
+      data: drawData,
+      smooth: false,
+      symbolSize: 5,
+      lineStyle: { width: 2 },
+      itemStyle: { color: color },
+      markPoint: {
+        data: markPointData
+      }
+    };
+  });
+
+  chart.setOption({
+    title: { text: '指标趋势图', left: 'center', textStyle: { fontSize: 16 } },
+    tooltip: {
+      trigger: 'axis',
+      formatter: function(params) {
+        const time = new Date(params[0].axisValue);
+        const timeStr = time.toISOString().split('T')[0];
+        const timeStamp = time.getTime();
+
+        const medInfo = getMedicationsAtTime(timeStamp);
+
+        let tooltipHtml = `<div style="font-size:12px;"><strong>时间：</strong>${timeStr}</div>`;
+
+        params.forEach(param => {
+          if (param.value !== null && param.value !== undefined) {
+            let rawVal = param.value.toString();
+            const seriesData = seriesMap.get(param.seriesName) || [];
+            const findItem = seriesData.find(item => item[0] === param.axisValue);
+            if (findItem) {
+              rawVal = findItem[2];
+            }
+            tooltipHtml += `<div style="font-size:12px;"><strong>${param.seriesName}：</strong>${rawVal}</div>`;
+          }
+        });
+
+        tooltipHtml += '<div style="font-size:12px;margin-top:4px;"><strong>用药：</strong></div>';
+        medInfo.forEach(med => {
+          tooltipHtml += `<div style="font-size:11px; padding-left:8px;">• ${med}</div>`;
+        });
+
+        return tooltipHtml;
+      },
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      borderColor: '#ddd',
+      borderWidth: 1,
+      padding: 10,
+      textStyle: { fontSize: 12 }
+    },
+    legend: { data: selected, top: 28, itemHeight: 10, itemWidth: 10 },
+    xAxis: {
+      type: 'time',
+      min: globalMin,
+      max: globalMax
+    },
+    yAxis: { type: 'value' },
+    series,
+    grid: { top: 60, bottom: 80, left: 60, right: 40 },
+    dataZoom: [
+      { type: 'slider', xAxisIndex: 0, height: 20, bottom: 20, fillerColor: 'rgba(60, 180, 255, 0.15)' },
+      { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true }
+    ]
+  }, true);
+
+  renderTimeline(timeline, medications, indicatorData, globalMin, globalMax);
+}
+
+function renderTimeline(timeline, meds, indicators, globalMin, globalMax) {
+  timeline.clear();
+
+  const baseOption = {
+    title: {
+      text: meds.length ? '用药时间轴' : '无用药数据',
+      left: 'center',
+      textStyle: { fontSize: 14 }
+    },
+    xAxis: {
+      type: 'time',
+      min: globalMin,
+      max: globalMax,
+      axisLabel: { formatter: '{yyyy}-{MM}' }
+    },
+    yAxis: { type: 'value', show: false, min: 0, max: 1 },
+    grid: { top: 40, bottom: 30, left: 60, right: 20 },
+    tooltip: {
+      show: true,
+      trigger: 'item',
+      formatter: (params) => {
+        if (params.seriesType === 'line' && params.componentSubType === 'markPoint') {
+          const med = params.data._med;
+          return `<strong>${med.regimen}</strong><br/>${med.startTime} 至 ${med.endTime}`;
+        }
+        return '';
+      }
+    }
+  };
+
+  if (meds.length === 0) {
+    timeline.setOption(baseOption);
+    document.getElementById('legendContainer').innerHTML = '<p style="font-size:0.875rem;color:#6b7280;">暂无用药记录</p>';
+    return;
+  }
+
+  const regimens = [...new Set(meds.map(m => m.regimen))];
+  const colors = ['#FF6B6B', '#FFD93D', '#4ECDC4', '#45B7D1', '#96CEB4', '#DDA0DD', '#FFB347', '#8BC34A'];
+  const colorMap = {};
+  regimens.forEach((r, i) => colorMap[r] = colors[i % colors.length]);
+
+  const series = regimens.map(regimen => {
+    const items = meds.filter(m => m.regimen === regimen);
+    const data = [];
+    const markPointData = [];
+
+    items.forEach(m => {
+      const start = new Date(m.startTime).getTime();
+      const end = new Date(m.endTime).getTime();
+      data.push([start, 0.8], [end, 0.8]);
+
+      markPointData.push({
+        coord: [(start + end) / 2, 0.9],
+        label: { show: false },
+        _med: m,
+        symbol: 'rect',
+        symbolSize: [end - start, 20],
+        itemStyle: {
+          color: 'transparent',
+          borderColor: 'transparent'
+        }
+      });
+    });
+
+    return {
+      name: regimen,
+      type: 'line',
+      symbol: 'none',
+      lineStyle: { width: 0 },
+      areaStyle: {
+        color: colorMap[regimen],
+        opacity: 0.7
+      },
+      data: data,
+      markPoint: {
+        data: markPointData,
+        tooltip: { show: true }
+      }
+    };
+  });
+
+  timeline.setOption({
+    ...baseOption,
+    series: series
+  });
+
+  const legend = document.getElementById('legendContainer');
+  legend.innerHTML = '';
+  regimens.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'legend-item';
+    div.innerHTML = `<div class="legend-color" style="background:${colorMap[r]}"></div> ${r}`;
+    legend.appendChild(div);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const showChangeRate = document.getElementById('showChangeRate');
+  const changeThresholdContainer = document.getElementById('changeThresholdContainer');
+  const percentThresholdContainer = document.getElementById('percentThresholdContainer');
+
+  showChangeRate.addEventListener('change', function () {
+    if (this.checked) {
+      changeThresholdContainer.style.display = 'block';
+      percentThresholdContainer.style.display = 'block';
+    } else {
+      changeThresholdContainer.style.display = 'none';
+      percentThresholdContainer.style.display = 'none';
+    }
+  });
+
+  document.getElementById('showKeyPoints').addEventListener('change', () => renderCharts());
+  showChangeRate.addEventListener('change', () => renderCharts());
+  document.getElementById('changeThreshold').addEventListener('input', () => renderCharts());
+  document.getElementById('percentThreshold').addEventListener('input', () => renderCharts());
+
+  changeThresholdContainer.style.display = 'none';
+  percentThresholdContainer.style.display = 'none';
+});
+</script>
+</body>
+</html>
