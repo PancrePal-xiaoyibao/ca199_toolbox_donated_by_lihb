@@ -153,8 +153,8 @@ START_DATE,END_DATE,DRUG_NAME
 ca199_toolbox/
 ├── index.html                      # 主应用程序（HTML + JavaScript）
 ├── js/
-│   ├── echarts.min.js             # 图表库（Apache 2.0）
-│   └── papaparse.min.js           # CSV 解析库（MIT）
+│   ├── echarts.min.js             # 图表库（AGPL-3.0+）
+│   └── papaparse.min.js           # CSV 解析库（AGPL-3.0+）
 ├── cache/                         # 缓存数据目录
 ├── data.csv                       # 示例医疗指标数据
 ├── medication.csv                 # 示例用药方案数据
@@ -199,9 +199,9 @@ ca199_toolbox/
 
 | 技术                 | 说明               | 许可证             |
 | -------------------- | ------------------ | ------------------ |
-| **ECharts**    | 交互式数据可视化库 | Apache License 2.0 |
-| **PapaParse**  | CSV 数据解析库     | MIT License        |
-| **HTML5**      | 标记语言           | -                  |
+| **ECharts**    | 交互式数据可视化库 | AGPL-3.0+          |
+| **PapaParse**  | CSV 数据解析库     | AGPL-3.0+          |
+| **HTML5**      | 标记语言           | AGPL-3.0+          |
 | **JavaScript** | 前端逻辑           | AGPL-3.0+          |
 | **CSS3**       | 样式表             | AGPL-3.0+          |
 

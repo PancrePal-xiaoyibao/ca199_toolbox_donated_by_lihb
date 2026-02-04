@@ -1,3 +1,12 @@
+<!--
+  CA199 医疗指标可视化工具
+  Copyright (C) 2025 lihb
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published
+  by the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+-->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -63,17 +72,17 @@
       border: 1px solid #e5e7eb;
       border-radius: 0.5rem;
     }
-    .timeline-container { height: 120px; margin-top: 1rem; }
-.selector-panel, .control-panel {
-  width: 14rem;
-  background: white;
-  padding: 0.5rem; /* 减少 padding */
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  max-height: 650px; /* 增加最大高度限制，防止撑爆 */
-  overflow-y: auto; /* 内容多时自动滚动 */
-}
+    .timeline-container { height: 150px; margin-top: 1rem; }
+    .selector-panel, .control-panel {
+      width: 14rem;
+      background: white;
+      padding: 0.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      max-height: 650px;
+      overflow-y: auto;
+    }
     @media (min-width: 1024px) {
       .selector-panel, .control-panel { width: 12rem; flex-shrink: 0; }
     }
@@ -97,7 +106,6 @@
     .legend-item { display: flex; align-items: center; font-size: 0.75rem; }
     .legend-color { width: 12px; height: 12px; border-radius: 2px; margin-right: 0.3rem; }
 
-    /* 控制面板样式 */
     .control-panel label {
       font-size: 0.875rem;
     }
@@ -109,17 +117,22 @@
       margin-top: 0.25rem;
     }
 
-    /* 变化率提示文字：放大、加粗 */
     .rich-text {
       font-size: 12px !important;
       font-weight: bold;
       color: #FF6B6B;
     }
+    .w-full { width: 100%; box-sizing: border-box; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .border { border: 1px solid #e5e7eb; }
+    .rounded { border-radius: 0.25rem; }
+    .text-sm { font-size: 0.875rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
   </style>
 </head>
 <body>
   <h1>医疗指标趋势可视化</h1>
-  <!-- 文件上传区 -->
   <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
     <div>
       <label class="btn-file" title="请选择同目录下的 data.csv">
@@ -145,32 +158,38 @@
         <div id="timelineContainer" class="timeline-container"></div>
         <div id="legendContainer" class="legend-container"></div>
       </div>
-      <!-- 指标选择面板 -->
       <div class="selector-panel">
         <div class="control-title" style="font-weight:600;margin-bottom:0.5rem;">显示控制</div>
 
-        <!-- 关键点 + 变化率 合并为一行 -->
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
           <label style="margin-right: 0.5rem;">关键点</label>
           <input type="checkbox" id="showKeyPoints" checked />
-
           <label style="margin-right: 0.5rem;">变化率</label>
           <input type="checkbox" id="showChangeRate" />
         </div>
 
-        <!-- 数值变化输入框（仅在变化率开启时显示） -->
+
+
         <div id="changeThresholdContainer" style="display: none; margin-top: 0.5rem;">
           <label style="display: block; font-size: 0.75rem; color: #4b5563; margin-bottom: 0.25rem;">数值变化 ≥</label>
           <input type="number" id="changeThreshold" value="0" min="0" step="0.1" style="width: 95%; padding: 0.375rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;" />
         </div>
 
-        <!-- 变化幅度滑块（仅在变化率开启时显示） -->
         <div id="percentThresholdContainer" style="display: none; margin-top: 0.5rem;">
           <label style="display: block; font-size: 0.75rem; color: #4b5563; margin-bottom: 0.25rem;">变化幅度 ≥ <span id="percentValue">20%</span></label>
           <input type="range" id="percentThreshold" min="0" max="100" value="20" style="width: 100%;" />
         </div>
 
         <div class="selector-title" style="font-weight:600;margin-bottom:0.5rem;">选择指标</div>
+          <div class="mb-2">
+            <input
+              type="text"
+              placeholder="搜索指标..."
+              class="w-full px-2 py-1 border rounded text-sm"
+              id="indicatorSearchInput"
+              oninput="filterIndicators()"
+            >
+          </div>
         <div id="checkboxContainer"></div>
         <button onclick="renderCharts()" class="render-btn">生成图表</button>
       </div>
@@ -191,7 +210,8 @@ const DEFAULT_CONFIG = {
   medicationTable: {
     startTimeField: 'START_DATE',
     endTimeField: 'END_DATE',
-    regimenField: 'DRUG_NAME'
+    regimenField: 'DRUG_NAME',
+    tagField: 'TAG'
   }
 };
 
@@ -266,12 +286,13 @@ function processMainData(rows) {
 
 function processMedications(rows) {
   medications = [];
-  const { startTimeField, endTimeField, regimenField } = DEFAULT_CONFIG.medicationTable;
+  const { startTimeField, endTimeField, regimenField,tagField } = DEFAULT_CONFIG.medicationTable;
 
   for (const row of rows) {
     const start = row[startTimeField]?.trim();
     const end = row[endTimeField]?.trim();
     const regimen = row[regimenField]?.trim();
+    const tag = row[tagField]?.trim();
     if (!start || !end || !regimen) continue;
 
     const startDt = new Date(start);
@@ -282,6 +303,7 @@ function processMedications(rows) {
       startTime: startDt.toISOString().split('T')[0],
       endTime: endDt.toISOString().split('T')[0],
       regimen: regimen,
+      tag: tag,
       startTimeStamp: startDt.getTime(),
       endTimeStamp: endDt.getTime()
     });
@@ -292,6 +314,7 @@ function tryRenderContent() {
   if (allIndicators.length > 0) {
     renderSelector();
     document.getElementById('content').classList.remove('hidden');
+    setTimeout(() => renderCharts(), 10);
   }
 }
 
@@ -301,62 +324,41 @@ function renderSelector() {
   uniqueNames.forEach(name => {
     const label = document.createElement('label');
     label.className = 'checkbox-item';
+    // 👇 关键：添加 data-indicator-name 属性用于搜索
+    label.setAttribute('data-indicator-name', name);
     label.innerHTML = `<input type="checkbox" value="${name}"> ${name}`;
     container.appendChild(label);
   });
 
   const firstCheckbox = container.querySelector('input[type="checkbox"]');
-  if (firstCheckbox) {
-    firstCheckbox.checked = true;
-  }
+  if (firstCheckbox) firstCheckbox.checked = true;
 }
 
-function tryRenderContent() {
-  if (allIndicators.length > 0) {
-    renderSelector();
-    document.getElementById('content').classList.remove('hidden');
-
-    setTimeout(() => {
-      renderCharts();
-    }, 10);
-  }
-}
-
-// 获取指定时间点的用药信息
 function getMedicationsAtTime(timeStamp) {
   if (medications.length === 0) return ['无用药记录'];
-
-  const matchedMeds = medications.filter(med => {
-    return timeStamp >= med.startTimeStamp && timeStamp <= med.endTimeStamp;
-  });
-
-  if (matchedMeds.length === 0) {
-    return ['无用药记录'];
-  }
-
+  const matchedMeds = medications.filter(med => timeStamp >= med.startTimeStamp && timeStamp <= med.endTimeStamp);
+  if (matchedMeds.length === 0) return ['无用药记录'];
   return matchedMeds.map(med => `${med.regimen} (${med.startTime} 至 ${med.endTime})`);
 }
 
 // ========== 图表渲染 ==========
 function renderCharts() {
-  const selected = Array.from(document.querySelectorAll('#checkboxContainer input:checked'))
-    .map(cb => cb.value);
+  const selected = Array.from(document.querySelectorAll('#checkboxContainer input:checked')).map(cb => cb.value);
   if (selected.length === 0) {
     alert('请至少选择一个指标');
     return;
   }
 
-  const chart = echarts.init(document.getElementById('chartContainer'));
-  const timeline = echarts.init(document.getElementById('timelineContainer'));
+  const chartDom = document.getElementById('chartContainer');
+  const timelineDom = document.getElementById('timelineContainer');
+  const chart = echarts.getInstanceByDom(chartDom) || echarts.init(chartDom);
+  const timeline = echarts.getInstanceByDom(timelineDom) || echarts.init(timelineDom);
 
   const indicatorData = allIndicators.filter(i => selected.includes(i.indicatorName));
 
   const allTimePoints = [
     ...indicatorData.map(d => new Date(d.testTime).getTime()),
-    ...medications.flatMap(m => [
-      new Date(m.startTime).getTime(),
-      new Date(m.endTime).getTime()
-    ])
+    ...medications.flatMap(m => [new Date(m.startTime).getTime(), new Date(m.endTime).getTime()])
   ];
 
   let globalMin, globalMax;
@@ -398,7 +400,6 @@ function renderCharts() {
     const color = colors[idx % colors.length];
     const markPointData = [];
 
-    // ===== 关键点逻辑（含末尾点带名称）=====
     if (showKeyPoints && data.length > 0) {
       const values = data.map(d => d[1]);
       const minVal = Math.min(...values);
@@ -449,7 +450,6 @@ function renderCharts() {
       });
     }
 
-    // ===== 变化率逻辑（限制小数位数为1位）=====
     if (showChangeRate && data.length >= 2) {
       for (let i = 1; i < data.length; i++) {
         const prev = data[i - 1];
@@ -460,7 +460,6 @@ function renderCharts() {
 
         if (absDiff >= changeThreshold && Math.abs(percent) >= percentThreshold) {
           const sign = diff > 0 ? '+' : '-';
-          // 核心修复：将差值保留1位小数
           const fmtDiff = diff.toFixed(1);
           const fmtPercent = Math.abs(percent).toFixed(1);
           const label = `${sign}${fmtDiff} (${sign}${fmtPercent}%)`;
@@ -504,28 +503,21 @@ function renderCharts() {
         const time = new Date(params[0].axisValue);
         const timeStr = time.toISOString().split('T')[0];
         const timeStamp = time.getTime();
-
         const medInfo = getMedicationsAtTime(timeStamp);
-
         let tooltipHtml = `<div style="font-size:12px;"><strong>时间：</strong>${timeStr}</div>`;
-
         params.forEach(param => {
           if (param.value !== null && param.value !== undefined) {
             let rawVal = param.value.toString();
             const seriesData = seriesMap.get(param.seriesName) || [];
             const findItem = seriesData.find(item => item[0] === param.axisValue);
-            if (findItem) {
-              rawVal = findItem[2];
-            }
+            if (findItem) rawVal = findItem[2];
             tooltipHtml += `<div style="font-size:12px;"><strong>${param.seriesName}：</strong>${rawVal}</div>`;
           }
         });
-
         tooltipHtml += '<div style="font-size:12px;margin-top:4px;"><strong>用药：</strong></div>';
         medInfo.forEach(med => {
           tooltipHtml += `<div style="font-size:11px; padding-left:8px;">• ${med}</div>`;
         });
-
         return tooltipHtml;
       },
       backgroundColor: 'rgba(255,255,255,0.95)',
@@ -542,7 +534,7 @@ function renderCharts() {
     },
     yAxis: { type: 'value' },
     series,
-    grid: { top: 60, bottom: 80, left: 60, right: 40 },
+    grid: { top: 60, bottom: 50, left: 60, right: 40 },
     dataZoom: [
       { type: 'slider', xAxisIndex: 0, height: 20, bottom: 20, fillerColor: 'rgba(60, 180, 255, 0.15)' },
       { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true }
@@ -568,12 +560,12 @@ function renderTimeline(timeline, meds, indicators, globalMin, globalMax) {
       axisLabel: { formatter: '{yyyy}-{MM}' }
     },
     yAxis: { type: 'value', show: false, min: 0, max: 1 },
-    grid: { top: 40, bottom: 30, left: 60, right: 20 },
+    grid: { top: 5, bottom: 20, left: 10, right: 10 },
     tooltip: {
       show: true,
       trigger: 'item',
       formatter: (params) => {
-        if (params.seriesType === 'line' && params.componentSubType === 'markPoint') {
+        if (params.data && params.data._med) {
           const med = params.data._med;
           return `<strong>${med.regimen}</strong><br/>${med.startTime} 至 ${med.endTime}`;
         }
@@ -596,23 +588,64 @@ function renderTimeline(timeline, meds, indicators, globalMin, globalMax) {
   const series = regimens.map(regimen => {
     const items = meds.filter(m => m.regimen === regimen);
     const data = [];
-    const markPointData = [];
+    const markPoints = [];
 
     items.forEach(m => {
       const start = new Date(m.startTime).getTime();
       const end = new Date(m.endTime).getTime();
-      data.push([start, 0.8], [end, 0.8]);
+      data.push([start, 0.5], [end, 0.5], [end, null]);
 
-      markPointData.push({
-        coord: [(start + end) / 2, 0.9],
-        label: { show: false },
-        _med: m,
-        symbol: 'rect',
-        symbolSize: [end - start, 20],
-        itemStyle: {
-          color: 'transparent',
-          borderColor: 'transparent'
+        // 计算持续时间文本
+        const startDate = new Date(m.startTime);
+        const endDate = new Date(m.endTime);
+        let diffTime = endDate - startDate;
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // 天数仍保留原有的向上取整逻辑
+        let durationText;
+
+        if (diffDays >= 30) {
+          // 1. 月份改用 Math.floor 向下取整，避免不足1个月被误算为1个月
+          const diffMonths = Math.floor(diffDays / 30);
+          // 2. 剩余天数用减法计算，比取余更直观精准，避免极端场景偏差
+          const remainingDays = diffDays - diffMonths * 30;
+          // 3. 优化文本展示，避免出现“X个月0天”的冗余表述
+          durationText = remainingDays > 0
+            ? `${diffMonths}个月${remainingDays}天`
+            : `${diffMonths}个月`;
+        } else {
+          durationText = `${diffDays}天`;
         }
+
+      const tagOrRegimen = m.tag || m.regimen || '未知';
+
+      let fullText = `${tagOrRegimen}\n\n(${durationText})`;
+
+      fullText = `${fullText}\n${m.startTime.slice(2)} 到 ${m.endTime.slice(2)}`;
+
+      // ✅ 关键修复：添加 _med 字段
+      const midTime = (start + end) / 2; // 移除 -20
+      markPoints.push({
+        name: regimen,
+        coord: [midTime, 0.5],
+        value: fullText,
+        _med: m, // 👈 必须加这一行！
+        label: {
+          show: true,
+          position: 'middle',
+          align: 'center',
+          formatter: '{c}',
+          fontSize: 12,
+          padding: [12, 6],
+          fontWeight: 'bold',
+          color: '#FFFFFF',
+          width: 'auto',
+          overflow: 'none'
+        },
+        symbol: 'circle',
+        symbolSize: 1,
+        itemStyle: {
+          color: 'transparent'
+        },
+        z: 999
       });
     });
 
@@ -627,8 +660,8 @@ function renderTimeline(timeline, meds, indicators, globalMin, globalMax) {
       },
       data: data,
       markPoint: {
-        data: markPointData,
-        tooltip: { show: true }
+        data: markPoints,
+        tooltip: { show: true } // ✅ 显式开启
       }
     };
   });
@@ -671,6 +704,21 @@ document.addEventListener('DOMContentLoaded', () => {
   changeThresholdContainer.style.display = 'none';
   percentThresholdContainer.style.display = 'none';
 });
+</script>
+<script>
+function filterIndicators() {
+  const searchKeyword = document.getElementById('indicatorSearchInput').value.trim().toLowerCase();
+  const allIndicatorItems = document.querySelectorAll('#checkboxContainer .checkbox-item');
+
+  allIndicatorItems.forEach(item => {
+    const indicatorName = item.getAttribute('data-indicator-name').toLowerCase();
+    if (searchKeyword === '' || indicatorName.includes(searchKeyword)) {
+      item.style.display = ''; // 恢复默认显示（避免内联 display: none 残留）
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
 </script>
 </body>
 </html>
