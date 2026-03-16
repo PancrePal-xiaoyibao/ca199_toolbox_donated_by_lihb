@@ -43,11 +43,18 @@
     .subtitle {
       font-size: 0.9375rem;
       color: #4b5563;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
       line-height: 1.8;
     }
     .subtitle p {
       margin: 0.25rem 0;
+    }
+    .right-logo {
+        display: none;
+        margin-left: auto;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
     }
     .hidden { display: none; }
     .btn-file {
@@ -101,8 +108,9 @@
       border: 1px solid #e5e7eb;
       border-radius: 0.5rem;
       font-size: 0.875rem;
-      max-height: 650px;
+      max-height: calc(100vh - 200px);
       overflow-y: auto;
+      box-sizing: border-box;
     }
     @media (min-width: 1024px) {
       .selector-panel, .control-panel { width: 12rem; flex-shrink: 0; }
@@ -150,6 +158,47 @@
     .rounded { border-radius: 0.25rem; }
     .text-sm { font-size: 0.875rem; }
     .mb-2 { margin-bottom: 0.5rem; }
+
+    /* 新增：显示控制区域布局样式 */
+    .control-section {
+      margin-bottom: 0.5rem;
+    }
+    .control-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: nowrap;
+    }
+    .checkbox-row label {
+      white-space: nowrap;
+      font-size: 0.875rem;
+    }
+    .checkbox-row input[type="checkbox"] {
+      transform: scale(1.2);
+      margin: 0;
+    }
+    .threshold-container {
+      margin-left: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+    .threshold-container label {
+      display: block;
+      font-size: 0.75rem;
+      color: #4b5563;
+      margin-bottom: 0.25rem;
+    }
+
+    /* 确保搜索框宽度适配 */
+    #indicatorSearchInput {
+      box-sizing: border-box;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -161,7 +210,10 @@
     <p>➡️ 感谢志愿者@lihb的代码贡献与无私开源，携手小胰宝社区，助力肿瘤患者及家庭实现主动科学的病情管理。</p>
     <p>➡️ 小胰宝社区是重庆天工开物基金会旗下公益项目，通过AI技术赋能胰腺肿瘤患友，请关注微信公众号“小胰宝助手”。</p>
   </div>
-  <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+  <!-- 修改外层容器，使用 flex 布局并设置 justify-content: space-between -->
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+  <!-- 左侧按钮组 -->
+  <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
     <div>
       <label class="btn-file" title="请选择同目录下的 data.csv">
         加载指标数据 (data.csv)
@@ -177,7 +229,21 @@
       </label>
       <div id="medFileName" class="file-info"></div>
     </div>
+    <div>
+      <label class="btn-file" title="请选择同目录下的 remarksline.csv">
+        加载标注数据 (remarksline.csv)
+        <input type="file" id="remarkFile" accept=".csv" style="display:none" />
+      </label>
+      <div id="remarkFileName" class="file-info"></div>
+    </div>
   </div>
+
+  <!-- 右侧logo图片 -->
+  <div class="right-logo">
+    <img src="https://picgo-1302991947.cos.ap-guangzhou.myqcloud.com/images/Pop%20Mart%20Character%20Front%20View%20(2).png" alt="小胰宝社区" class="logo" style="height: 60px; width: auto;" />
+    <span style="font-size: 14px; color: #333; font-weight: 500;">请关注微信公众号“小胰宝助手”</span>
+  </div>
+</div>
 
   <div id="content" class="hidden">
     <div class="content-container">
@@ -186,38 +252,69 @@
         <div id="timelineContainer" class="timeline-container"></div>
         <div id="legendContainer" class="legend-container"></div>
       </div>
+
       <div class="selector-panel">
-        <div class="control-title" style="font-weight:600;margin-bottom:0.5rem;">显示控制</div>
-
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-          <label style="margin-right: 0.5rem;">关键点</label>
-          <input type="checkbox" id="showKeyPoints" checked />
-          <label style="margin-right: 0.5rem;">变化率</label>
-          <input type="checkbox" id="showChangeRate" />
-        </div>
-
-
-
-        <div id="changeThresholdContainer" style="display: none; margin-top: 0.5rem;">
-          <label style="display: block; font-size: 0.75rem; color: #4b5563; margin-bottom: 0.25rem;">数值变化 ≥</label>
-          <input type="number" id="changeThreshold" value="0" min="0" step="0.1" style="width: 95%; padding: 0.375rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;" />
-        </div>
-
-        <div id="percentThresholdContainer" style="display: none; margin-top: 0.5rem;">
-          <label style="display: block; font-size: 0.75rem; color: #4b5563; margin-bottom: 0.25rem;">变化幅度 ≥ <span id="percentValue">20%</span></label>
-          <input type="range" id="percentThreshold" min="0" max="100" value="20" style="width: 100%;" />
-        </div>
-
-        <div class="selector-title" style="font-weight:600;margin-bottom:0.5rem;">选择指标</div>
-          <div class="mb-2">
+        <div class="control-section">
+          <span class="control-title">时间筛选</span>
+          <!-- 核心：压缩间距+限制总宽度，避免超出容器 -->
+          <div style="display: flex; gap: 0.25rem; margin-bottom: 0.5rem; width: calc(100% - 8px);">
             <input
-              type="text"
-              placeholder="搜索指标..."
-              class="w-full px-2 py-1 border rounded text-sm"
-              id="indicatorSearchInput"
-              oninput="filterIndicators()"
+              type="number"
+              id="startYear"
+              placeholder="起始年"
+              min="2020"
+              max="2099"
+              value="2022"
+              style="flex: 1; padding: 0.25rem 0.2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.8rem; box-sizing: border-box; margin: 0;"
+            >
+            <input
+              type="number"
+              id="endYear"
+              placeholder="截止年"
+              min="2020"
+              max="2099"
+              value="2030"
+              style="flex: 1; padding: 0.25rem 0.2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.8rem; box-sizing: border-box; margin: 0;"
             >
           </div>
+        </div>
+        <!-- 重构后的显示控制区域 -->
+        <div class="control-section">
+          <span class="control-title">显示控制</span>
+          <div class="checkbox-row">
+            <label>关键点</label>
+            <input type="checkbox" id="showKeyPoints" checked />
+            <label>变化率</label>
+            <input type="checkbox" id="showChangeRate" />
+          </div>
+
+          <div id="changeThresholdContainer" class="threshold-container" style="display: none;">
+            <label>数值变化 ≥</label>
+            <input type="number" id="changeThreshold" value="0" min="0" step="0.1"
+              style="width: calc(100% - 10px); /* 减少宽度，预留边距 */
+                   padding: 0.375rem 0.25rem; /* 减少左右内边距 */
+                   border: 1px solid #d1d5db;
+                   border-radius: 0.375rem;
+                   font-size: 0.875rem;
+                   box-sizing: border-box; /* 关键：padding 计入宽度 */" />
+          </div>
+
+          <div id="percentThresholdContainer" class="threshold-container" style="display: none;">
+            <label>变化幅度 ≥ <span id="percentValue">20%</span></label>
+            <input type="range" id="percentThreshold" min="0" max="100" value="20" style="width: 100%;" />
+          </div>
+        </div>
+
+        <!-- 选择指标区域 -->
+        <!-- 父容器加样式，让子元素同行显示 -->
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span class="control-title">选择指标</span>
+          <span class="control-title" onclick="clearAllCheckboxes()" >点击取消</span>
+        </div>
+
+        <div class="mb-2">
+          <input             type="text"             placeholder="搜索指标..."             class="w-full px-2 py-1 border rounded text-sm"            id="indicatorSearchInput"             oninput="filterIndicators()"           >
+        </div>
         <div id="checkboxContainer"></div>
         <button onclick="renderCharts()" class="render-btn">生成图表</button>
       </div>
@@ -228,6 +325,7 @@
 let allIndicators = [];
 let medications = [];
 let uniqueNames = [];
+let remarks = []; // 修正：变量名从 remarksNames 改为 remarks
 
 const DEFAULT_CONFIG = {
   dataTable: {
@@ -263,6 +361,12 @@ function readFile(file) {
 document.getElementById('dataFile').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
+
+  // 隐藏头部
+  document.querySelector('.header-container').style.display = 'none';
+  document.querySelector('.subtitle').style.display = 'none';
+  document.querySelector('.right-logo').style.display = 'flex';
+
   document.getElementById('dataFileName').textContent = `已加载: ${file.name}`;
   const text = await readFile(file);
   const data = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
@@ -281,6 +385,19 @@ document.getElementById('medFile').addEventListener('change', async (e) => {
   processMedications(meds);
   tryRenderContent();
   document.getElementById('medFileName').textContent = `已加载: ${file.name}，共 ${meds.length} 条数据`;
+  e.target.value = '';
+});
+
+document.getElementById('remarkFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('remarkFileName').textContent = `已加载: ${file.name}`;
+  const text = await readFile(file);
+  const remark = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+  processRemarks(remark); // 传入解析后的行数据，而非文本
+  tryRenderContent();
+  // 修复1：移除有效行数显示
+  document.getElementById('remarkFileName').textContent = `已加载: ${file.name}，共 ${remark.length} 条数据`;
   e.target.value = '';
 });
 
@@ -338,6 +455,35 @@ function processMedications(rows) {
   }
 }
 
+// 修正：processRemarks 接收解析后的行数据，而非文本
+function processRemarks(rows) {
+  remarks = []; // 清空原有标注数据
+
+  for (const row of rows) {
+    // 清理数据中的多余单引号
+    const date_str = (row['REMARKS_DATE'] || '').trim().replace(/'/g, '');
+    const remark_str = (row['REMARKS'] || '').trim().replace(/'/g, '');
+    const offsetx = parseFloat(row['OFFSETX']) || 0;
+    const offsety = parseFloat(row['OFFSETY']) || 0;
+
+    if (!date_str || !remark_str) continue;
+
+    const dt = new Date(date_str);
+    if (isNaN(dt.getTime())) continue; // 严格判断日期有效性
+
+    const formatted_date = dt.toISOString().split('T')[0];
+    remarks.push({
+      date: formatted_date,
+      text: `${formatted_date}\n\n${remark_str}`,
+      offsetx: offsetx,
+      offsety: offsety,
+      timestamp: dt.getTime() // 方便后续按时间排序
+    });
+  }
+
+  remarks.sort((a, b) => a.timestamp - b.timestamp);
+}
+
 function tryRenderContent() {
   if (allIndicators.length > 0) {
     renderSelector();
@@ -352,7 +498,6 @@ function renderSelector() {
   uniqueNames.forEach(name => {
     const label = document.createElement('label');
     label.className = 'checkbox-item';
-    // 👇 关键：添加 data-indicator-name 属性用于搜索
     label.setAttribute('data-indicator-name', name);
     label.innerHTML = `<input type="checkbox" value="${name}"> ${name}`;
     container.appendChild(label);
@@ -382,11 +527,49 @@ function renderCharts() {
   const chart = echarts.getInstanceByDom(chartDom) || echarts.init(chartDom);
   const timeline = echarts.getInstanceByDom(timelineDom) || echarts.init(timelineDom);
 
-  const indicatorData = allIndicators.filter(i => selected.includes(i.indicatorName));
+  // ========== 新增：获取年份筛选条件 ==========
+  const startYear = parseInt(document.getElementById('startYear').value) || 2020;
+  const endYear = parseInt(document.getElementById('endYear').value) || new Date().getFullYear();
 
+  // 验证年份合法性
+  if (startYear > endYear) {
+    alert('起始年不能大于截止年！');
+    return;
+  }
+  if (startYear < 2020 || endYear > 2099) {
+    alert('年份范围需在2020-2099之间！');
+    return;
+  }
+
+  // 转换为时间戳（起始年1月1日 00:00:00，截止年12月31日 23:59:59）
+  const startYearTime = new Date(startYear, 0, 1).getTime();
+  const endYearTime = new Date(endYear, 11, 31, 23, 59, 59).getTime();
+
+  // ========== 新增：根据年份筛选指标数据 ==========
+  const indicatorData = allIndicators.filter(i => {
+    // 仅保留选中的指标 + 年份范围内的数据
+    const dataTime = new Date(i.testTime).getTime();
+    return selected.includes(i.indicatorName) && dataTime >= startYearTime && dataTime <= endYearTime;
+  });
+
+  // 如果筛选后无数据，提示用户
+  if (indicatorData.length === 0) {
+    alert(`在 ${startYear}-${endYear} 年份范围内无数据，请调整年份！`);
+    return;
+  }
+
+  // ========== 调整：计算筛选后的时间范围 ==========
   const allTimePoints = [
+    // 仅包含年份范围内的指标时间 + 用药时间 + 标注时间
     ...indicatorData.map(d => new Date(d.testTime).getTime()),
-    ...medications.flatMap(m => [new Date(m.startTime).getTime(), new Date(m.endTime).getTime()])
+    ...medications.filter(m => {
+      // 筛选年份范围内的用药数据
+      const medStart = m.startTimeStamp;
+      const medEnd = m.endTimeStamp;
+      // 只要用药时间段和筛选年份有交集，就保留
+      return !(medEnd < startYearTime || medStart > endYearTime);
+    }).flatMap(m => [m.startTimeStamp, m.endTimeStamp]),
+    ...remarks.map(r => r.timestamp) // 新增：标注时间点
   ];
 
   let globalMin, globalMax;
@@ -397,10 +580,14 @@ function renderCharts() {
     const padding = range * 0.05 || 24 * 60 * 60 * 1000;
     globalMin -= padding;
     globalMax += padding;
+
+    // 确保时间范围不超出年份筛选边界
+    globalMin = Math.max(globalMin, startYearTime);
+    globalMax = Math.min(globalMax, endYearTime);
   } else {
-    const now = Date.now();
-    globalMin = now - 30 * 24 * 3600 * 1000;
-    globalMax = now;
+    // 无数据时，默认使用筛选的年份范围
+    globalMin = startYearTime;
+    globalMax = endYearTime;
   }
 
   const seriesMap = new Map();
@@ -422,6 +609,34 @@ function renderCharts() {
   const changeThreshold = parseFloat(document.getElementById('changeThreshold').value) || 0;
   const percentThreshold = parseFloat(document.getElementById('percentThreshold').value) || 0;
   document.getElementById('percentValue').textContent = `${Math.round(percentThreshold)}%`;
+
+  // 核心修复：提前构建标注线数据（对齐Python逻辑，使用date字符串）
+  // 核心修复：标注线文字方向与居中位置
+const markLineData = remarks
+  .filter(r => r.timestamp >= startYearTime && r.timestamp <= endYearTime)
+  .map(r => ({
+    xAxis: r.date,
+    label: {
+      show: true,
+      formatter: r.text,
+      fontWeight: 'bold',
+      fontSize: 11,
+      padding: [6, 8],
+      // 关键修复：
+      position: 'middle',      // 文字在线的中间位置
+      rotate: 0,               // 强制文字水平显示，不旋转
+      offset: [
+        r.offsetx || 0,        // X轴微调（±10以内）
+        (r.offsety || 0) - 10  // Y轴微调，默认向下偏移10px避免遮挡
+      ]
+    },
+    lineStyle: {
+      color: '#999',
+      type: 'dashed',
+      width: 1
+    },
+    symbol: 'none'
+  }));
 
   const series = selected.map((name, idx) => {
     const data = seriesMap.get(name).sort((a, b) => a[0] - b[0]);
@@ -509,6 +724,7 @@ function renderCharts() {
 
     const drawData = data.map(item => [item[0], item[1]]);
 
+    // 核心修复：将 markLine 挂载到 Series 上（完全对齐Python代码逻辑）
     return {
       name,
       type: 'line',
@@ -519,12 +735,20 @@ function renderCharts() {
       itemStyle: { color: color },
       markPoint: {
         data: markPointData
+      },
+      markLine: { // 仅修改这一处：添加markLine配置
+        data: markLineData
       }
     };
   });
 
+  // ========== 优化：图表标题显示年份范围 ==========
   chart.setOption({
-    title: { text: '指标趋势图', left: 'center', textStyle: { fontSize: 16 } },
+    title: {
+      text: `指标趋势图 (${startYear}-${endYear})`,
+      left: 'center',
+      textStyle: { fontSize: 16 }
+    },
     tooltip: {
       trigger: 'axis',
       formatter: function(params) {
@@ -559,6 +783,7 @@ function renderCharts() {
       type: 'time',
       min: globalMin,
       max: globalMax
+      // 移除了原有的xAxis.markLine配置
     },
     yAxis: { type: 'value' },
     series,
@@ -569,7 +794,12 @@ function renderCharts() {
     ]
   }, true);
 
-  renderTimeline(timeline, medications, indicatorData, globalMin, globalMax);
+  // ========== 调整：时间轴也应用年份筛选 ==========
+  renderTimeline(timeline, medications.filter(m => {
+    const medStart = m.startTimeStamp;
+    const medEnd = m.endTimeStamp;
+    return !(medEnd < startYearTime || medStart > endYearTime);
+  }), indicatorData, globalMin, globalMax);
 }
 
 function renderTimeline(timeline, meds, indicators, globalMin, globalMax) {
@@ -627,15 +857,12 @@ function renderTimeline(timeline, meds, indicators, globalMin, globalMax) {
         const startDate = new Date(m.startTime);
         const endDate = new Date(m.endTime);
         let diffTime = endDate - startDate;
-        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // 天数仍保留原有的向上取整逻辑
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         let durationText;
 
         if (diffDays >= 30) {
-          // 1. 月份改用 Math.floor 向下取整，避免不足1个月被误算为1个月
           const diffMonths = Math.floor(diffDays / 30);
-          // 2. 剩余天数用减法计算，比取余更直观精准，避免极端场景偏差
           const remainingDays = diffDays - diffMonths * 30;
-          // 3. 优化文本展示，避免出现“X个月0天”的冗余表述
           durationText = remainingDays > 0
             ? `${diffMonths}个月${remainingDays}天`
             : `${diffMonths}个月`;
@@ -649,13 +876,12 @@ function renderTimeline(timeline, meds, indicators, globalMin, globalMax) {
 
       fullText = `${fullText}\n${m.startTime.slice(2)} 到 ${m.endTime.slice(2)}`;
 
-      // ✅ 关键修复：添加 _med 字段
-      const midTime = (start + end) / 2; // 移除 -20
+      const midTime = (start + end) / 2;
       markPoints.push({
         name: regimen,
         coord: [midTime, 0.5],
         value: fullText,
-        _med: m, // 👈 必须加这一行！
+        _med: m,
         label: {
           show: true,
           position: 'middle',
@@ -689,7 +915,7 @@ function renderTimeline(timeline, meds, indicators, globalMin, globalMax) {
       data: data,
       markPoint: {
         data: markPoints,
-        tooltip: { show: true } // ✅ 显式开启
+        tooltip: { show: true }
       }
     };
   });
@@ -724,6 +950,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // 新增：年份输入框变化时刷新图表
+  document.getElementById('startYear').addEventListener('change', () => renderCharts());
+  document.getElementById('endYear').addEventListener('change', () => renderCharts());
+
   document.getElementById('showKeyPoints').addEventListener('change', () => renderCharts());
   showChangeRate.addEventListener('change', () => renderCharts());
   document.getElementById('changeThreshold').addEventListener('input', () => renderCharts());
@@ -741,11 +971,22 @@ function filterIndicators() {
   allIndicatorItems.forEach(item => {
     const indicatorName = item.getAttribute('data-indicator-name').toLowerCase();
     if (searchKeyword === '' || indicatorName.includes(searchKeyword)) {
-      item.style.display = ''; // 恢复默认显示（避免内联 display: none 残留）
+      item.style.display = '';
     } else {
       item.style.display = 'none';
     }
   });
+}
+
+function clearAllCheckboxes() {
+    const allIndicatorItems = document.querySelectorAll('#checkboxContainer .checkbox-item');
+    allIndicatorItems.forEach(item => {
+      // 找到当前项内的复选框（精准定位，避免选到其他复选框）
+      const checkbox = item.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        checkbox.checked = false; // 仅取消勾选，无其他操作
+      }
+    });
 }
 </script>
 </body>
