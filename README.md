@@ -32,6 +32,17 @@
 - 📱 **响应式设计**：桌面和移动设备友好的用户界面
 - 🔒 **完全隐私**：所有数据处理在本地完成，无服务器上传
 
+## 🧭 版本结构
+
+当前仓库同时保留两套前端：
+
+- `index.html`
+  旧版单文件本地工具，继续兼容手工加载 `data.csv / medication.csv / remarksline.csv`
+- `ca199-toolbox-v2/`
+  新版 React 前端工程，采用三 Tab 结构：
+  `病程总览 | 病情详情 | 病程摘要`
+  并直接支持 `case-organizer` 导出的 `normalized/`，过渡期兼容 `legacy/`
+
 ---
 
 ## 🚀 快速开始 (3步上手)
@@ -176,6 +187,7 @@ REMARKS_DATE,REMARKS,OFFSETX,OFFSETY
 ```
 ca199_toolbox/
 ├── index.html                      # 主应用程序（HTML + JavaScript）
+├── ca199-toolbox-v2/               # 新版 React 前端工程
 ├── js/
 │   ├── echarts.min.js             # 图表库（AGPL-3.0+）
 │   └── papaparse.min.js           # CSV 解析库（AGPL-3.0+）

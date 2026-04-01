@@ -1,0 +1,17 @@
+:root {
+  --bg-app: #ece6da;
+  --bg-paper: rgba(255, 252, 246, 0.92);
+  --bg-paper-strong: #fffdf7;
+  --ink-strong: #243029;
+  --ink: #3d4941;
+  --ink-muted: #667168;
+  --line: rgba(39, 51, 45, 0.11);
+  --accent: #2f5f73;
+  --accent-soft: rgba(47, 95, 115, 0.1);
+  --accent-olive: #667a55;
+  --accent-rust: #915243;
+  --shadow-paper: 0 20px 60px rgba(42, 48, 44, 0.09);
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+}
