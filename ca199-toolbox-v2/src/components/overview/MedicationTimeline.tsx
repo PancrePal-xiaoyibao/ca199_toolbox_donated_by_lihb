@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { LineChart } from 'echarts/charts'
 import { DataZoomComponent, GridComponent, MarkPointComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { EChartsType, init, use } from 'echarts/core'
+import { EChartsType, connect, init, use } from 'echarts/core'
 import type { MedicationSpan } from '../../lib/models'
 
 use([LineChart, GridComponent, TooltipComponent, DataZoomComponent, MarkPointComponent, CanvasRenderer])
@@ -11,9 +11,6 @@ interface MedicationTimelineProps {
   medications: MedicationSpan[]
   minTime?: number
   maxTime?: number
-  fullMinTime?: number
-  fullMaxTime?: number
-  onRangeChange?: (range: { min?: number; max?: number }) => void
 }
 
 const COLORS = ['#FF6B6B', '#FFD93D', '#4ECDC4', '#45B7D1', '#96CEB4', '#DDA0DD', '#FFB347', '#8BC34A']
@@ -34,21 +31,12 @@ type TimelineMarkPoint = {
   itemStyle: { color: string }
 }
 
-type DataZoomEvent = {
-  batch?: Array<{ start?: number; end?: number; startValue?: number; endValue?: number }>
-  start?: number
-  end?: number
-  startValue?: number
-  endValue?: number
-}
+const CHART_SYNC_GROUP = 'overview-timeline-sync'
 
 export default function MedicationTimeline({
   medications,
   minTime,
   maxTime,
-  fullMinTime,
-  fullMaxTime,
-  onRangeChange,
 }: MedicationTimelineProps) {
   const chartRef = useRef<HTMLDivElement | null>(null)
 
@@ -72,18 +60,23 @@ export default function MedicationTimeline({
               ? `${Math.floor(durationDays / 30)}个月${durationDays % 30 ? `${durationDays % 30}天` : ''}`
               : `${durationDays}天`
 
+          const labelText =
+            durationDays < 75
+              ? `${item.tag || item.drugName}\n(${durationText})`
+              : `${item.tag || item.drugName}\n(${durationText})\n${item.startDate.slice(2)} 到 ${(item.endDate || item.startDate).slice(2)}`
+
           const midTime = (start + end) / 2
           markPoints.push({
             coord: [midTime, 0.5],
-            value: `${item.tag || item.drugName}\n(${durationText})\n${item.startDate.slice(2)} 到 ${(item.endDate || item.startDate).slice(2)}`,
+            value: labelText,
             label: {
               show: true,
               position: 'middle',
               formatter: '{c}',
-              fontSize: 12,
+              fontSize: 11,
               padding: [10, 6],
               fontWeight: 'bold',
-              color: '#ffffff',
+              color: '#18303a',
             },
             symbol: 'circle',
             symbolSize: 1,
@@ -112,6 +105,8 @@ export default function MedicationTimeline({
   useEffect(() => {
     if (!chartRef.current) return undefined
     const chart: EChartsType = init(chartRef.current)
+    chart.group = CHART_SYNC_GROUP
+    connect(CHART_SYNC_GROUP)
     chart.setOption({
       title: {
         text: '用药时间轴',
@@ -139,6 +134,9 @@ export default function MedicationTimeline({
           fillerColor: 'rgba(60, 180, 255, 0.15)',
           startValue: minTime,
           endValue: maxTime,
+          realtime: false,
+          brushSelect: false,
+          moveHandleSize: 10,
         },
         {
           type: 'inside',
@@ -150,34 +148,13 @@ export default function MedicationTimeline({
       series,
     })
 
-    const handleZoom = (event: unknown) => {
-      const payloadSource = (event as DataZoomEvent | undefined)?.batch?.[0] ?? (event as DataZoomEvent | undefined)
-      if (!payloadSource) return
-      const payload = payloadSource
-      if (payload.startValue !== undefined || payload.endValue !== undefined) {
-        onRangeChange?.({ min: payload.startValue, max: payload.endValue })
-        return
-      }
-
-      if (fullMinTime !== undefined && fullMaxTime !== undefined && payload.start !== undefined && payload.end !== undefined) {
-        const total = fullMaxTime - fullMinTime
-        onRangeChange?.({
-          min: fullMinTime + (payload.start / 100) * total,
-          max: fullMinTime + (payload.end / 100) * total,
-        })
-      }
-    }
-
-    chart.on('datazoom', handleZoom)
-
     const resizeObserver = new ResizeObserver(() => chart.resize())
     resizeObserver.observe(chartRef.current)
     return () => {
-      chart.off('datazoom', handleZoom)
       resizeObserver.disconnect()
       chart.dispose()
     }
-  }, [fullMaxTime, fullMinTime, maxTime, minTime, onRangeChange, series])
+  }, [maxTime, minTime, series])
 
   if (!medications.length) {
     return <p className="matrix-empty">暂无用药记录</p>

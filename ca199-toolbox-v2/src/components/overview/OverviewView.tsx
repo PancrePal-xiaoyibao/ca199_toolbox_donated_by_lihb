@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import dayjs from 'dayjs'
 import { useAppStore } from '../../app/store'
-import { formatDate } from '../../lib/date'
+import { formatDate, formatDurationRange } from '../../lib/date'
 import { buildMetricGroups } from '../../lib/metric-groups'
 import EmptyState from '../common/EmptyState'
 import OverviewChart from './OverviewChart'
@@ -25,7 +25,6 @@ export default function OverviewView() {
   const [showChangeRate, setShowChangeRate] = useState(false)
   const [changeThreshold, setChangeThreshold] = useState(0)
   const [percentThreshold, setPercentThreshold] = useState(20)
-  const [range, setRange] = useState<{ min?: number; max?: number }>({})
 
   const groups = useMemo(() => buildMetricGroups(indicators), [indicators])
   const endDate = indicators
@@ -80,10 +79,6 @@ export default function OverviewView() {
     minTime -= padding
     maxTime += padding
   }
-
-  useEffect(() => {
-    setRange({ min: minTime, max: maxTime })
-  }, [minTime, maxTime])
 
   function toggleGroup(key: string) {
     setCollapsedGroups((current) => ({ ...current, [key]: !current[key] }))
@@ -193,20 +188,14 @@ export default function OverviewView() {
               showChangeRate={showChangeRate}
               changeThreshold={changeThreshold}
               percentThreshold={percentThreshold}
-              minTime={range.min}
-              maxTime={range.max}
-              fullMinTime={minTime}
-              fullMaxTime={maxTime}
-              onRangeChange={setRange}
+              minTime={minTime}
+              maxTime={maxTime}
             />
             <div className="timeline-subsection">
               <MedicationTimeline
                 medications={filteredMedications}
-                minTime={range.min}
-                maxTime={range.max}
-                fullMinTime={minTime}
-                fullMaxTime={maxTime}
-                onRangeChange={setRange}
+                minTime={minTime}
+                maxTime={maxTime}
               />
             </div>
             <div className="legend-subsection">
@@ -222,7 +211,9 @@ export default function OverviewView() {
                 {filteredMedications.map((item) => (
                   <li key={`${item.startDate}-${item.drugName}`}>
                     <strong>{item.tag || item.drugName}</strong>
-                    <span>{formatDate(item.startDate)} 至 {formatDate(item.endDate)}</span>
+                    <span>
+                      {formatDate(item.startDate)} 至 {formatDate(item.endDate)}（{formatDurationRange(item.startDate, item.endDate)}）
+                    </span>
                   </li>
                 ))}
               </ul>

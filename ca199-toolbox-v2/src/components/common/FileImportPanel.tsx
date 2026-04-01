@@ -35,8 +35,8 @@ export default function FileImportPanel({ onImported, dataset }: FileImportPanel
         <p className="eyebrow">数据入口</p>
         <h2>导入 case-organizer 导出文件</h2>
         <p className="body-copy">
-          优先选择 <code>exports/normalized/</code> 下的四个文件。如果还在过渡期，也可以一次性选择旧版
-          <code>legacy/</code> 文件。
+          优先选择 <code>exports/normalized/ca199_toolbox_bundle.json</code>。如果需要，也可以继续选择
+          <code>normalized/</code> 下的标准文件集。
         </p>
       </div>
       <div className="import-actions">
@@ -55,14 +55,15 @@ export default function FileImportPanel({ onImported, dataset }: FileImportPanel
       </div>
       {dataset ? (
         <div className="import-status-strip">
-          <span>已加载: data.csv，共 {dataset.indicators.length} 条数据</span>
-          <span>已加载: medication.csv，共 {dataset.medications.length} 条数据</span>
-          <span>已加载: remarksline.csv，共 {dataset.events.length} 条数据</span>
+          <span>指标数据：{dataset.indicators.length} 条</span>
+          <span>用药数据：{dataset.medications.length} 条</span>
+          <span>事件数据：{dataset.events.length} 条</span>
         </div>
       ) : null}
       <ul className="file-hint-list">
+        <li>`preferred`: `ca199_toolbox_bundle.json`</li>
         <li>`normalized`: `indicators.csv`, `medications.csv`, `timeline_events.csv`, `patient_summary.json`</li>
-        <li>`legacy`: `data.csv`, `medication.csv`, `remarksline.csv`</li>
+        <li>`legacy`: `data.csv`, `medication.csv`, `remarksline.csv`（仅兼容旧版）</li>
       </ul>
     </section>
   )

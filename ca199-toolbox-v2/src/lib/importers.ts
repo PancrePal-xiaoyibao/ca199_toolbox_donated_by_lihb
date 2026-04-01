@@ -2,6 +2,14 @@ import Papa from 'papaparse'
 import type { ImportedDataset, IndicatorPoint, MedicationSpan, PatientSummary, TimelineEvent } from './models'
 
 type CsvRecord = Record<string, string | undefined>
+type BundlePayload = {
+  version?: number
+  source_mode?: 'normalized'
+  summary?: PatientSummary
+  indicators?: CsvRecord[]
+  medications?: CsvRecord[]
+  events?: CsvRecord[]
+}
 
 function parseCsv(text: string): CsvRecord[] {
   return Papa.parse<CsvRecord>(text, {
@@ -113,6 +121,7 @@ function parseEvents(rows: CsvRecord[], legacy = false): TimelineEvent[] {
 function detectMode(fileNames: string[]): ImportedDataset['sourceMode'] {
   const names = new Set(fileNames)
   const hasNormalized =
+    names.has('ca199_toolbox_bundle.json') ||
     names.has('indicators.csv') ||
     names.has('medications.csv') ||
     names.has('timeline_events.csv') ||
@@ -137,6 +146,14 @@ export async function importFiles(files: FileList | File[]): Promise<ImportedDat
   for (const file of input) {
     const text = await readFileText(file)
     switch (file.name) {
+      case 'ca199_toolbox_bundle.json': {
+        const payload = JSON.parse(text) as BundlePayload
+        indicators = parseIndicators(payload.indicators ?? [])
+        medications = parseMedications(payload.medications ?? [])
+        events = parseEvents(payload.events ?? [])
+        summary = payload.summary
+        break
+      }
       case 'indicators.csv':
         indicators = parseIndicators(parseCsv(text))
         break

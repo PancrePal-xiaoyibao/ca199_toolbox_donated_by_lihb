@@ -1,319 +1,97 @@
-# 快速开始指南 / Quick Start Guide
+# QUICKSTART
 
-## 🚀 5分钟快速上手
+## 项目简介
 
-### 使用流程
+当前整体方案由两个项目配合完成：
 
-#### 第一步：获取工具
-```bash
-1. 下载本仓库代码
-2. 解压文件夹
-3. 打开 index.html（用 Chrome/Edge 浏览器）
-```
+- `case-organizer`
+  负责患者资料整理、结构化提取、导出标准病程数据
+- `ca199-toolbox-v2`
+  负责病程展示，采用 React 三 Tab 界面：
+  `病程总览 | 病情详情 | 病程摘要`
 
-#### 第二步：准备数据
-```bash
-创建或编辑两个 CSV 文件：
-├── data.csv          # 医疗指标数据
-└── medication.csv    # 用药方案数据
-```
+旧版根目录 [index.html](/Users/qinxiaoqiang/Downloads/ca199_toolbox/index.html) 继续保留，只作为兼容参考，不再作为主开发入口。
 
-#### 第三步：加载数据
-```bash
-1. 点击"加载指标数据(data.csv)"按钮
-2. 选择本地 data.csv 文件
-3. 点击"加载用药数据(medication.csv)"按钮  
-4. 选择本地 medication.csv 文件
-```
+## 当前开发原则
 
-#### 第四步：查看结果
-```bash
-1. 在左侧面板选择要展示的指标
-2. 点击"生成图表"按钮
-3. 查看趋势图表和用药时间轴
-```
+- `normalized` 是唯一主接口
+- 推荐导入文件是：
+  `exports/normalized/ca199_toolbox_bundle.json`
+- `legacy` 仅保留兼容，不再作为后续设计前提
+- `case-organizer` 和 `ca199_toolbox` 应分别独立演进，靠导出接口打通
 
----
+## 开发入口
 
-## 📊 数据格式
+### 1. case-organizer
 
-### data.csv 示例
-```csv
-testTime,indicatorName,indicatorValue
-2024-01-01,CA199,120.5
-2024-01-08,CA199,150.3
-2024-01-15,CA199,145.2
-2024-01-01,CEA,45.2
-2024-01-08,CEA,52.1
-2024-01-15,CEA,48.5
-```
+本地目录：
+[case-organizer](/Users/qinxiaoqiang/Downloads/ca199_toolbox/case-organizer)
 
-**3个必需列**：
-- `testTime` - 检测日期（YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS）
-- `indicatorName` - 指标名称（CA199、CEA、AFP等）
-- `indicatorValue` - 数值（数字）
+职责：
+- 建立单患者目录
+- 接收图片/PDF/文本等资料
+- 调用解析流程
+- 导出 `normalized/`
 
-### medication.csv 示例
-```csv
-START_DATE,END_DATE,DRUG_NAME
-2024-01-01,2024-01-15,化疗方案A
-2024-01-20,2024-02-10,化疗方案B
-```
+当前推荐导出入口：
+- `exports/normalized/ca199_toolbox_bundle.json`
 
-**3个必需列**：
-- `START_DATE` - 开始日期
-- `END_DATE` - 结束日期
-- `DRUG_NAME` - 用药方案名称
+### 2. ca199-toolbox-v2
 
----
+本地目录：
+[ca199-toolbox-v2](/Users/qinxiaoqiang/Downloads/ca199_toolbox/ca199-toolbox-v2)
 
-## 🔒 数据安全 ⭐ 重要！
+职责：
+- 导入 `case-organizer` 的导出结果
+- 展示病程总览、病情详情、病程摘要
+- 逐步替代旧版单文件页面
 
-### ✅ 您的数据是安全的
-
-```
-┌─────────────────────────────────┐
-│   浏览器（您的电脑）             │
-│  ┌──────────────────────────┐   │
-│  │   医疗数据                │   │
-│  │   ✓ 完全本地存储          │   │
-│  │   ✓ 不上传云端            │   │
-│  │   ✓ 离线可运行            │   │
-│  └──────────────────────────┘   │
-│                                  │
-│  ✗ 零网络连接                   │
-│  ✗ 零服务器上传                 │
-│  ✗ 零云端存储                   │
-└─────────────────────────────────┘
-```
-
-### 隐私保证
-
-| 项目 | 状态 |
-|------|------|
-| 数据处理位置 | 100% 本地（您的电脑） |
-| 数据上传 | ❌ 不上传任何数据 |
-| 云端存储 | ❌ 零云端存储 |
-| 网络连接 | ✅ 可完全离线 |
-| 数据删除 | ✅ 关闭页面即删除 |
-| 隐私等级 | ✅ 最高安全 |
-
----
-
-## 🎯 常用操作
-
-### 查看关键数据点
-```
-1. 勾选"关键点"复选框
-2. 自动显示最大值和最后一个数据点
-3. 鼠标悬停查看具体数值
-```
-
-### 分析数值变化
-```
-1. 勾选"变化率"复选框
-2. 设置"数值变化 ≥" 阈值（如0.5）
-3. 设置"变化幅度 ≥" 百分比（如20%）
-4. 点击"生成图表"更新
-```
-
-### 放大/缩小时间范围
-```
-鼠标滚轮：在图表上向上/向下滚动
-拖动：在图表下方的滑块拖动
-```
-
-### 查看用药时间
-```
-悬停在图表上任意点 → 显示该时刻的用药方案
-```
-
----
-
-## 📝 编辑数据的正确方式
-
-### ✅ 推荐工具
-- **Excel** / **WPS** - 最简单
-- **Google Sheets** - 在线协作
-- **Notepad++** - 文本编辑（注意编码）
-- **VS Code** - 专业编辑
-
-### ⚠️ 重要提示
-
-**编码必须是 UTF-8！**
-
-```
-Excel 保存步骤：
-1. 打开 Excel
-2. 编辑数据
-3. 文件 → 另存为
-4. 文件类型：CSV (逗号分隔)
-5. 编码：UTF-8（或 Unicode）
-```
-
-**检查编码 (Notepad++)：**
-```
-编码 → 编码字符集 → UTF-8
-```
-
----
-
-## 🖥️ 系统要求
-
-### 浏览器
-- ✅ Chrome 60+
-- ✅ Firefox 55+
-- ✅ Safari 12+
-- ✅ Edge 79+
-
-### 操作系统
-- ✅ Windows 7+
-- ✅ macOS 10.12+
-- ✅ Linux (任何版本)
-
-### 网络
-- ✅ 需要网络下载工具
-- ✅ 使用时可完全离线
-
----
-
-## ❓ 常见问题
-
-### Q: 为什么数据没显示？
-**A:**
-```
-1. 检查编码是否为 UTF-8
-2. 检查列名是否完全匹配（区分大小写）
-3. 检查日期格式 (YYYY-MM-DD)
-4. 检查是否有空行或特殊字符
-```
-
-### Q: 支持哪些指标？
-**A:** 支持任何指标名称，例如：
-```
-CA199, CEA, AFP, HCG, PSA, 
-肺功能, 心率, 血糖, 尿酸等
-```
-
-### Q: 可以修改代码吗？
-**A:** ✅ 可以。代码完全开源（AGPL-3.0+），可自由修改。
-
-### Q: 能在手机上用吗？
-**A:** ✅ 可以。但建议用电脑，移动端体验一般。
-
-### Q: 数据会自动保存吗？
-**A:** ❌ 不会。关闭页面数据清空。下次需重新加载。
-
----
-
-## 🔧 高级用法
-
-### 修改默认列名
-
-编辑 `index.html`，找到这段代码：
-
-```javascript
-const DEFAULT_CONFIG = {
-  dataTable: {
-    timeField: 'testTime',        // 改为你的时间列名
-    nameField: 'indicatorName',   // 改为你的指标列名
-    valueField: 'indicatorValue'  // 改为你的数值列名
-  },
-  medicationTable: {
-    startTimeField: 'START_DATE',
-    endTimeField: 'END_DATE',
-    regimenField: 'DRUG_NAME'
-  }
-};
-```
-
-### 离线使用
+本地开发：
 
 ```bash
-1. 下载整个项目
-2. 放到本地文件夹
-3. 用浏览器打开 index.html
-4. 完全离线运行，无需网络
+cd /Users/qinxiaoqiang/Downloads/ca199_toolbox/ca199-toolbox-v2
+npm install
+npm run dev
 ```
 
----
+## 最小闭环
 
-## 📞 遇到问题？
+团队成员后续联调，按这个顺序：
 
-| 问题 | 解决方案 |
-|------|--------|
-| 图表不显示 | 检查编码 & 列名 & 日期格式 |
-| 数据加载失败 | 检查CSV格式，删除空行 |
-| 浏览器崩溃 | 数据量过大，分多个CSV文件 |
-| 中文显示乱码 | 确保文件编码是UTF-8 |
+1. 在 `case-organizer` 整理病例资料
+2. 导出 `exports/normalized/ca199_toolbox_bundle.json`
+3. 在 `ca199-toolbox-v2` 导入该文件
+4. 验证三 Tab 展示是否正确
 
----
+## 设计文档路径
 
-## 📋 检查清单
+核心设计文档都在：
+[docs/product](/Users/qinxiaoqiang/Downloads/ca199_toolbox/docs/product)
 
-下载后，运行前检查：
+建议优先阅读这些：
 
-- [ ] 解压了压缩文件
-- [ ] `index.html` 文件存在
-- [ ] `js/` 文件夹有 `echarts.min.js` 和 `papaparse.min.js`
-- [ ] 准备了 `data.csv` 文件（CSV格式，UTF-8编码）
-- [ ] 准备了 `medication.csv` 文件（可选）
-- [ ] 用Chrome/Edge/Safari/Firefox打开 `index.html`
-- [ ] 已阅读本指南 ✅
+- [2026-03-31-ca199-toolbox-redesign.md](/Users/qinxiaoqiang/Downloads/ca199_toolbox/docs/product/2026-03-31-ca199-toolbox-redesign.md)
+- [2026-04-01-ca199-toolbox-frontend-design-spec.md](/Users/qinxiaoqiang/Downloads/ca199_toolbox/docs/product/2026-04-01-ca199-toolbox-frontend-design-spec.md)
+- [2026-04-01-ca199-toolbox-frontend-implementation-plan.md](/Users/qinxiaoqiang/Downloads/ca199_toolbox/docs/product/2026-04-01-ca199-toolbox-frontend-implementation-plan.md)
+- [2026-04-01-case-organizer-project-spec.md](/Users/qinxiaoqiang/Downloads/ca199_toolbox/docs/product/2026-04-01-case-organizer-project-spec.md)
+- [2026-04-01-case-organizer-patient-wizard-spec.md](/Users/qinxiaoqiang/Downloads/ca199_toolbox/docs/product/2026-04-01-case-organizer-patient-wizard-spec.md)
+- [2026-04-01-case-organizer-implementation-plan.md](/Users/qinxiaoqiang/Downloads/ca199_toolbox/docs/product/2026-04-01-case-organizer-implementation-plan.md)
+- [2026-04-01-case-organizer-ca199toolbox-bridge-spec.md](/Users/qinxiaoqiang/Downloads/ca199_toolbox/docs/product/2026-04-01-case-organizer-ca199toolbox-bridge-spec.md)
 
----
+## 团队后续开发建议
 
-## 🎓 学习流程
+后续开发顺序建议固定为：
 
-```
-第1步: 下载解压 (1分钟)
-  ↓
-第2步: 用Excel编辑示例数据 (2分钟)
-  ↓
-第3步: 在浏览器加载CSV (1分钟)
-  ↓
-第4步: 查看图表 (1分钟)
-  ↓
-第5步: 替换为自己的数据 (5分钟)
-  ↓
-完成！开始使用 🎉
-```
+1. 先稳定 `case-organizer -> normalized bundle` 导出
+2. 再继续收紧 `ca199-toolbox-v2` 的主界面与导入体验
+3. 最后再考虑删减 `legacy`、弱化旧版 `index.html`
 
----
+不要反过来先围着旧版接口开发。
 
-## ⚖️ 重要声明
+## 版本说明
 
-✅ **您的医疗数据完全安全**
-- 不会上传任何服务器
-- 不会保存到云端
-- 不会被第三方访问
-- 关闭浏览器即删除
+当前新版前端工作分支：
 
-⚠️ **使用限制**
-- 仅用于数据展示和分析
-- 不能作为医疗诊断依据
-- 所有医疗判断需咨询医生
-- 不可用于商业目的
+- `feature/ca199-toolbox-v2`
 
----
-
-<div align="center">
-
-### 🎉 现在就开始使用吧！
-
-**下载 → 解压 → 编辑数据 → 打开index.html → 查看图表**
-
-✨ 简单安全高效
-
-</div>
-
----
-
-## 📚 相关文档
-
-| 文档 | 说明 |
-|------|------|
-| [README.md](./README.md) | 完整项目说明 |
-| [DONATION_CERTIFICATE.md](./DONATION_CERTIFICATE.md) | 捐赠证明 |
-| [DONOR_AUTHORIZATION.md](./DONOR_AUTHORIZATION.md) | 法律授权 |
-
+如果后续继续推进 `ca199-toolbox-v2`，建议都在该分支或其后续分支上继续开发，不直接在 `main` 上混改。

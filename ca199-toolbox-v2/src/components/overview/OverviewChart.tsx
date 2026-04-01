@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { LineChart } from 'echarts/charts'
 import { DataZoomComponent, GraphicComponent, GridComponent, LegendComponent, MarkLineComponent, MarkPointComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { EChartsType, init, use } from 'echarts/core'
+import { EChartsType, connect, init, use } from 'echarts/core'
 import type { IndicatorPoint, TimelineEvent } from '../../lib/models'
 
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, GraphicComponent, DataZoomComponent, MarkPointComponent, MarkLineComponent, CanvasRenderer])
@@ -17,9 +17,6 @@ interface OverviewChartProps {
   percentThreshold: number
   minTime?: number
   maxTime?: number
-  fullMinTime?: number
-  fullMaxTime?: number
-  onRangeChange?: (range: { min?: number; max?: number }) => void
 }
 
 const SERIES_COLORS = ['#2f5f73', '#7a9e4d', '#9b4a42', '#8a6d4f', '#5b6ac9']
@@ -35,13 +32,7 @@ type MarkPointItem = {
   }
 }
 
-type DataZoomEvent = {
-  batch?: Array<{ start?: number; end?: number; startValue?: number; endValue?: number }>
-  start?: number
-  end?: number
-  startValue?: number
-  endValue?: number
-}
+const CHART_SYNC_GROUP = 'overview-timeline-sync'
 
 export default function OverviewChart({
   metrics,
@@ -53,9 +44,6 @@ export default function OverviewChart({
   percentThreshold,
   minTime,
   maxTime,
-  fullMinTime,
-  fullMaxTime,
-  onRangeChange,
 }: OverviewChartProps) {
   const chartRef = useRef<HTMLDivElement | null>(null)
 
@@ -152,15 +140,17 @@ export default function OverviewChart({
   )
 
   const chartTitle = useMemo(() => {
-    if (fullMinTime === undefined || fullMaxTime === undefined) return '指标趋势图'
-    const startYear = new Date(fullMinTime).getFullYear()
-    const endYear = new Date(fullMaxTime).getFullYear()
+    if (minTime === undefined || maxTime === undefined) return '指标趋势图'
+    const startYear = new Date(minTime).getFullYear()
+    const endYear = new Date(maxTime).getFullYear()
     return `指标趋势图 (${startYear}-${endYear})`
-  }, [fullMaxTime, fullMinTime])
+  }, [maxTime, minTime])
 
   useEffect(() => {
     if (!chartRef.current) return undefined
     const chart: EChartsType = init(chartRef.current)
+    chart.group = CHART_SYNC_GROUP
+    connect(CHART_SYNC_GROUP)
     chart.setOption({
       animationDuration: 500,
       legend: {
@@ -199,34 +189,13 @@ export default function OverviewChart({
         { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true },
       ],
     })
-
-    const handleZoom = (event: unknown) => {
-      const payloadSource = (event as DataZoomEvent | undefined)?.batch?.[0] ?? (event as DataZoomEvent | undefined)
-      if (!payloadSource) return
-      const payload = payloadSource
-      if (payload.startValue !== undefined || payload.endValue !== undefined) {
-        onRangeChange?.({ min: payload.startValue, max: payload.endValue })
-        return
-      }
-
-      if (fullMinTime !== undefined && fullMaxTime !== undefined && payload.start !== undefined && payload.end !== undefined) {
-        const total = fullMaxTime - fullMinTime
-        onRangeChange?.({
-          min: fullMinTime + (payload.start / 100) * total,
-          max: fullMinTime + (payload.end / 100) * total,
-        })
-      }
-    }
-
-    chart.on('datazoom', handleZoom)
     const resizeObserver = new ResizeObserver(() => chart.resize())
     resizeObserver.observe(chartRef.current)
     return () => {
-      chart.off('datazoom', handleZoom)
       resizeObserver.disconnect()
       chart.dispose()
     }
-  }, [chartTitle, fullMaxTime, fullMinTime, maxTime, minTime, onRangeChange, series])
+  }, [chartTitle, maxTime, minTime, series])
 
   return <div ref={chartRef} className="overview-chart" aria-label="多指标趋势图" />
 }
